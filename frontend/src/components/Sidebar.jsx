@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { MessageSquare, Plus, Trash2, Edit3, Check, X, LogOut } from 'lucide-react';
 import { MaleAvatarSVG, FemaleAvatarSVG } from './ProfileModal';
 
-export default function Sidebar({ chats, activeChatId, onSelectChat, onCreateChat, onDeleteChat, onUpdateChatTitle, currentUser, onLogOut }) {
+export default function Sidebar({ chats, activeChatId, onSelectChat, onCreateChat, onDeleteChat, onUpdateChatTitle, currentUser, onLogOut, isOpen }) {
   const [editingId, setEditingId] = useState(null);
   const [editTitle, setEditTitle] = useState('');
 
@@ -39,7 +39,7 @@ export default function Sidebar({ chats, activeChatId, onSelectChat, onCreateCha
   };
 
   return (
-    <aside className="sidebar">
+    <aside className={`sidebar ${isOpen ? 'open' : ''}`}>
       {/* Brand Header */}
       <div className="sidebar-header">
         <div className="brand">

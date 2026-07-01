@@ -13,6 +13,7 @@ export default function App() {
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   // Modal & Theme states
   const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -223,25 +224,36 @@ export default function App() {
     setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'));
   };
 
-  const activeChat = chats.find((c) => c._id === activeChatId);
+  const handleSelectChat = (chatId) => {
+    setActiveChatId(chatId);
+    setIsSidebarOpen(false);
+  };
 
   // Force register/login modal if not authenticated
   if (!currentUser) {
     return <AuthModal onAuthSuccess={handleAuthSuccess} />;
   }
 
+  const activeChat = chats.find((c) => c._id === activeChatId);
+
   return (
     <div className={`app-container ${theme}`}>
+      {/* Sidebar Overlay for Mobile */}
+      {isSidebarOpen && (
+        <div className="sidebar-overlay" onClick={() => setIsSidebarOpen(false)} />
+      )}
+
       {/* Sidebar history */}
       <Sidebar
         chats={chats}
         activeChatId={activeChatId}
-        onSelectChat={setActiveChatId}
+        onSelectChat={handleSelectChat}
         onCreateChat={handleCreateChat}
         onDeleteChat={handleDeleteChat}
         onUpdateChatTitle={handleUpdateChatTitle}
         currentUser={currentUser}
         onLogOut={handleLogOut}
+        isOpen={isSidebarOpen}
       />
 
       {/* Main chat window container */}
@@ -264,6 +276,7 @@ export default function App() {
           profile={currentUser}
           theme={theme}
           onToggleTheme={toggleTheme}
+          onToggleSidebar={() => setIsSidebarOpen(prev => !prev)}
         />
       </div>
 

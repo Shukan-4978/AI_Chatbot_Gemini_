@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { useAutoAnimate } from '@formkit/auto-animate/react';
-import { Send, Share2, Clipboard, Check, Paperclip, X, Sun, Moon } from 'lucide-react';
+import { Send, Share2, Clipboard, Check, Paperclip, X, Sun, Moon, Menu } from 'lucide-react';
 import TypingIndicator from './TypingIndicator';
 import { MaleAvatarSVG, FemaleAvatarSVG } from './ProfileModal';
 
@@ -154,7 +154,7 @@ function parseInlineMarkdown(text) {
   });
 }
 
-export default function ChatWindow({ activeChat, messages, loading, onSendMessage, onOpenProfile, profile, theme, onToggleTheme }) {
+export default function ChatWindow({ activeChat, messages, loading, onSendMessage, onOpenProfile, profile, theme, onToggleTheme, onToggleSidebar }) {
   const [input, setInput] = useState('');
   const [selectedImage, setSelectedImage] = useState(null); // { base64: "...", mimeType: "..." }
   const messagesEndRef = useRef(null);
@@ -257,10 +257,16 @@ export default function ChatWindow({ activeChat, messages, loading, onSendMessag
     }
     return <MaleAvatarSVG />;
   };
-
   if (!activeChat) {
     return (
       <div className="welcome-container">
+        {/* Mobile Menu Toggle Button */}
+        <div style={{ position: 'absolute', top: 0, left: 0, padding: '16px' }}>
+          <button onClick={onToggleSidebar} className="header-icon-btn menu-toggle-btn" title="Toggle Sidebar">
+            <Menu size={18} />
+          </button>
+        </div>
+
         {/* Header (still needed to switch profile/themes when activeChat is null) */}
         <div style={{ position: 'absolute', top: 0, right: 0, padding: '16px', display: 'flex', gap: '10px', alignItems: 'center' }}>
           <button onClick={onToggleTheme} className="header-icon-btn" title="Toggle Light/Dark Theme">
@@ -286,9 +292,14 @@ export default function ChatWindow({ activeChat, messages, loading, onSendMessag
     <div className="chat-window">
       {/* Header */}
       <header className="chat-window-header">
-        <div className="header-title-container">
-          <h2 className="header-title">{activeChat.title}</h2>
-          <p className="header-subtitle">Active conversation session</p>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
+          <button onClick={onToggleSidebar} className="header-icon-btn menu-toggle-btn" title="Toggle Sidebar">
+            <Menu size={18} />
+          </button>
+          <div className="header-title-container">
+            <h2 className="header-title">{activeChat.title}</h2>
+            <p className="header-subtitle">Active conversation session</p>
+          </div>
         </div>
 
         <div className="header-actions">
