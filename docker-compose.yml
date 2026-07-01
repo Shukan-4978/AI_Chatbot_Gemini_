@@ -1,0 +1,20 @@
+services:
+  backend:
+    build: ./backend
+    ports:
+      - "1111:1111"
+    environment:
+      - PORT=1111
+      - MONGODB_URI=mongodb+srv://shukan:0509@ok1.w6irwkc.mongodb.net/AI-ChatBot
+      - GEMINI_API_KEY=AIzaSyAaGE4HNhri5kdZPD0JGs9Xp8a3wtMsY4M
+      - FRONTEND_URL=http://localhost
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        - VITE_API_URL=http://localhost:1111/api/chats
+    ports:
+      - "80:80"
+    depends_on:
+      - backend

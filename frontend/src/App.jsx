@@ -1,0 +1,279 @@
+import React, { useState, useEffect } from 'react';
+import Sidebar from './components/Sidebar';
+import ChatWindow from './components/ChatWindow';
+import ProfileModal from './components/ProfileModal';
+import AuthModal from './components/AuthModal';
+
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:1111/api/chats';
+
+export default function App() {
+  const [currentUser, setCurrentUser] = useState(null);
+  const [chats, setChats] = useState([]);
+  const [activeChatId, setActiveChatId] = useState(null);
+  const [messages, setMessages] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  // Modal & Theme states
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [theme, setTheme] = useState('dark');
+
+  // Verify auth session on mount
+  useEffect(() => {
+    const savedUserId = localStorage.getItem('chat_user_id');
+    if (savedUserId) {
+      fetchProfile(savedUserId);
+    }
+  }, []);
+
+  // Fetch chats whenever currentUser changes
+  useEffect(() => {
+    if (currentUser) {
+      fetchChats();
+    } else {
+      setChats([]);
+      setActiveChatId(null);
+    }
+  }, [currentUser]);
+
+  // Fetch messages when activeChatId changes
+  useEffect(() => {
+    if (activeChatId) {
+      fetchMessages(activeChatId);
+    } else {
+      setMessages([]);
+    }
+  }, [activeChatId]);
+
+  const fetchProfile = async (userId) => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/profile`, {
+        headers: { 'X-User-Id': userId }
+      });
+      if (!res.ok) {
+        // Clear broken session
+        localStorage.removeItem('chat_user_id');
+        setCurrentUser(null);
+        return;
+      }
+      const data = await res.json();
+      setCurrentUser(data);
+    } catch (err) {
+      console.error('Error fetching user profile:', err);
+    }
+  };
+
+  const fetchChats = async () => {
+    if (!currentUser) return;
+    try {
+      setError(null);
+      const res = await fetch(API_BASE_URL, {
+        headers: { 'X-User-Id': currentUser._id }
+      });
+      if (!res.ok) throw new Error('Failed to load chat history');
+      const data = await res.json();
+      setChats(data);
+      if (data.length > 0 && !activeChatId) {
+        setActiveChatId(data[0]._id);
+      }
+    } catch (err) {
+      console.error(err);
+      setError('Could not connect to backend server. Make sure your server is running.');
+    }
+  };
+
+  const handleSaveProfile = async (updatedProfile) => {
+    if (!currentUser) return;
+    try {
+      setError(null);
+      const res = await fetch(`${API_BASE_URL}/profile`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-User-Id': currentUser._id
+        },
+        body: JSON.stringify(updatedProfile),
+      });
+      if (!res.ok) throw new Error('Failed to update profile');
+      const data = await res.json();
+      setCurrentUser(data);
+      setIsProfileOpen(false);
+    } catch (err) {
+      console.error(err);
+      setError('Could not update profile information.');
+    }
+  };
+
+  const fetchMessages = async (chatId) => {
+    try {
+      setError(null);
+      const res = await fetch(`${API_BASE_URL}/${chatId}/messages`);
+      if (!res.ok) throw new Error('Failed to retrieve messages');
+      const data = await res.json();
+      setMessages(data);
+    } catch (err) {
+      console.error(err);
+      setError('Error retrieving message history.');
+    }
+  };
+
+  const handleCreateChat = async () => {
+    if (!currentUser) return;
+    try {
+      setError(null);
+      const res = await fetch(API_BASE_URL, {
+        method: 'POST',
+        headers: { 'X-User-Id': currentUser._id }
+      });
+      if (!res.ok) throw new Error('Failed to start new chat');
+      const newChat = await res.json();
+      setChats((prev) => [newChat, ...prev]);
+      setActiveChatId(newChat._id);
+    } catch (err) {
+      console.error(err);
+      setError('Could not create a new chat.');
+    }
+  };
+
+  const handleDeleteChat = async (chatId) => {
+    try {
+      setError(null);
+      const res = await fetch(`${API_BASE_URL}/${chatId}`, {
+        method: 'DELETE',
+      });
+      if (!res.ok) throw new Error('Failed to delete chat');
+      setChats((prev) => prev.filter((c) => c._id !== chatId));
+      if (activeChatId === chatId) {
+        setActiveChatId(null);
+      }
+    } catch (err) {
+      console.error(err);
+      setError('Could not delete the chat.');
+    }
+  };
+
+  const handleUpdateChatTitle = async (chatId, title) => {
+    try {
+      setError(null);
+      const res = await fetch(`${API_BASE_URL}/${chatId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title }),
+      });
+      if (!res.ok) throw new Error('Failed to update title');
+      const updatedChat = await res.json();
+      setChats((prev) => prev.map((c) => (c._id === chatId ? updatedChat : c)));
+    } catch (err) {
+      console.error(err);
+      setError('Could not rename the chat.');
+    }
+  };
+
+  const handleSendMessage = async (content, image) => {
+    if (!activeChatId || !currentUser) return;
+    try {
+      setError(null);
+      setLoading(true);
+
+      const tempUserMessage = {
+        _id: Date.now().toString(),
+        chatId: activeChatId,
+        sender: 'user',
+        content,
+        attachment: image ? { base64: image.base64, mimeType: image.mimeType } : null,
+        createdAt: new Date().toISOString(),
+      };
+      setMessages((prev) => [...prev, tempUserMessage]);
+
+      const res = await fetch(`${API_BASE_URL}/${activeChatId}/messages`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-User-Id': currentUser._id
+        },
+        body: JSON.stringify({ content, image }),
+      });
+
+      if (!res.ok) throw new Error('Failed to send message');
+      const data = await res.json();
+
+      setMessages((prev) =>
+        prev.filter((m) => m._id !== tempUserMessage._id).concat([data.userMessage, data.aiMessage])
+      );
+
+      fetchChats();
+    } catch (err) {
+      console.error(err);
+      setError('Could not generate response. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAuthSuccess = (user) => {
+    setCurrentUser(user);
+  };
+
+  const handleLogOut = () => {
+    localStorage.removeItem('chat_user_id');
+    setCurrentUser(null);
+  };
+
+  const toggleTheme = () => {
+    setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'));
+  };
+
+  const activeChat = chats.find((c) => c._id === activeChatId);
+
+  // Force register/login modal if not authenticated
+  if (!currentUser) {
+    return <AuthModal onAuthSuccess={handleAuthSuccess} />;
+  }
+
+  return (
+    <div className={`app-container ${theme}`}>
+      {/* Sidebar history */}
+      <Sidebar
+        chats={chats}
+        activeChatId={activeChatId}
+        onSelectChat={setActiveChatId}
+        onCreateChat={handleCreateChat}
+        onDeleteChat={handleDeleteChat}
+        onUpdateChatTitle={handleUpdateChatTitle}
+        currentUser={currentUser}
+        onLogOut={handleLogOut}
+      />
+
+      {/* Main chat window container */}
+      <div style={{ flex: 1, height: '100%', display: 'flex', flexDirection: 'column', position: 'relative' }}>
+        {error && (
+          <div className="error-banner">
+            <span>{error}</span>
+            <button onClick={() => setError(null)} className="error-close">
+              Dismiss
+            </button>
+          </div>
+        )}
+
+        <ChatWindow
+          activeChat={activeChat}
+          messages={messages}
+          loading={loading}
+          onSendMessage={handleSendMessage}
+          onOpenProfile={() => setIsProfileOpen(true)}
+          profile={currentUser}
+          theme={theme}
+          onToggleTheme={toggleTheme}
+        />
+      </div>
+
+      {/* User profile configuration Modal */}
+      <ProfileModal
+        isOpen={isProfileOpen}
+        onClose={() => setIsProfileOpen(false)}
+        onSave={handleSaveProfile}
+        initialProfile={currentUser}
+      />
+    </div>
+  );
+}
