@@ -13,7 +13,11 @@ const PORT = process.env.PORT || 1111;
 connectDB();
 
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  origin: [
+    process.env.FRONTEND_URL,
+    'http://localhost:5173',
+    'https://ai-chatbot-gemini-frontend.vercel.app'
+  ].filter(Boolean),
   credentials: true
 }));
 app.use(express.json());
