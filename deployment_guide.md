@@ -8,8 +8,8 @@ This guide outlines how to deploy your AI Chatbot application. Because we are us
 When deploying, never commit `.env` files to git (which we blocked in `.gitignore`). Instead, you must enter these variables in your hosting provider's settings panel.
 
 ### Backend Environment Variables (`backend`)
-* `MONGODB_URI`: `mongodb+srv://shukan:0509@ok1.w6irwkc.mongodb.net/AI-ChatBot`
-* `GEMINI_API_KEY`: Your Gemini API key (`AIzaSy...`)
+* `MONGODB_URI`: `your-mongodb-atlas-connection-string`
+* `GEMINI_API_KEY`: `your-gemini-api-key`
 * `PORT`: `1111` (or let the platform assign one automatically)
 
 ### Frontend Environment Variables (`frontend`)
@@ -35,8 +35,8 @@ We recommend using **Render** (render.com):
    * **Build Command**: `npm install`
    * **Start Command**: `node server.js`
 5. Open the **Environment Variables** tab and add:
-   * **Key**: `MONGODB_URI` / **Value**: `mongodb+srv://shukan:0509@ok1.w6irwkc.mongodb.net/AI-ChatBot`
-   * **Key**: `GEMINI_API_KEY` / **Value**: `AIzaSyAaGE4HNhri5kdZPD0JGs9Xp8a3wtMsY4M`
+   * **Key**: `MONGODB_URI` / **Value**: `your-mongodb-atlas-connection-string`
+   * **Key**: `GEMINI_API_KEY` / **Value**: `your-gemini-api-key`
 6. Click **Deploy Web Service**.
 7. Once deployed, copy your service's URL (e.g., `https://ai-chatbot-backend-xyz.onrender.com`).
 
