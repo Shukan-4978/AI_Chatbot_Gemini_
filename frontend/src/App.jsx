@@ -1,73 +1,38 @@
 import React, { useState, useEffect } from 'react';
 import Sidebar from './components/Sidebar';
 import ChatWindow from './components/ChatWindow';
-import ProfileModal from './components/ProfileModal';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:1111/api/chats';
 
 export default function App() {
-  const [currentUser, setCurrentUser] = useState(null);
+  const [clientId, setClientId] = useState(null);
   const [chats, setChats] = useState([]);
   const [activeChatId, setActiveChatId] = useState(null);
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-
-  // Modal & Theme states
-  const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [theme, setTheme] = useState('dark');
 
-  // Create a guest user profile automatically
-  const createGuestUser = async () => {
-    try {
-      const uniqueSuffix = Date.now() + Math.floor(Math.random() * 1000);
-      const guestData = {
-        name: 'Guest User',
-        gender: 'male',
-        dob: '2000-01-01',
-        avatar: 'male',
-        language: 'English',
-        contactNo: '0000000000',
-        email: `guest_${uniqueSuffix}@example.com`,
-        city: 'Guest City'
-      };
-      const res = await fetch(`${API_BASE_URL}/register`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(guestData)
-      });
-      if (res.ok) {
-        const data = await res.json();
-        localStorage.setItem('chat_user_id', data._id);
-        setCurrentUser(data);
-      } else {
-        console.error("Failed to auto-register guest user");
-      }
-    } catch (err) {
-      console.error("Error auto-registering guest user:", err);
-    }
-  };
-
-  // Verify auth session on mount or register guest
+  // Load or generate local client ID on mount
   useEffect(() => {
-    const savedUserId = localStorage.getItem('chat_user_id');
-    if (savedUserId) {
-      fetchProfile(savedUserId);
-    } else {
-      createGuestUser();
+    let savedClientId = localStorage.getItem('chat_client_id');
+    if (!savedClientId) {
+      savedClientId = 'client_' + Date.now() + '_' + Math.random().toString(36).substring(2, 9);
+      localStorage.setItem('chat_client_id', savedClientId);
     }
+    setClientId(savedClientId);
   }, []);
 
-  // Fetch chats whenever currentUser changes
+  // Fetch chats whenever clientId changes
   useEffect(() => {
-    if (currentUser) {
+    if (clientId) {
       fetchChats();
     } else {
       setChats([]);
       setActiveChatId(null);
     }
-  }, [currentUser]);
+  }, [clientId]);
 
   // Fetch messages when activeChatId changes
   useEffect(() => {
@@ -78,31 +43,12 @@ export default function App() {
     }
   }, [activeChatId]);
 
-  const fetchProfile = async (userId) => {
-    try {
-      const res = await fetch(`${API_BASE_URL}/profile`, {
-        headers: { 'X-User-Id': userId }
-      });
-      if (!res.ok) {
-        // Clear broken session
-        localStorage.removeItem('chat_user_id');
-        setCurrentUser(null);
-        createGuestUser();
-        return;
-      }
-      const data = await res.json();
-      setCurrentUser(data);
-    } catch (err) {
-      console.error('Error fetching user profile:', err);
-    }
-  };
-
   const fetchChats = async () => {
-    if (!currentUser) return;
+    if (!clientId) return;
     try {
       setError(null);
       const res = await fetch(API_BASE_URL, {
-        headers: { 'X-User-Id': currentUser._id }
+        headers: { 'X-User-Id': clientId }
       });
       if (!res.ok) throw new Error('Failed to load chat history');
       const data = await res.json();
@@ -113,28 +59,6 @@ export default function App() {
     } catch (err) {
       console.error(err);
       setError('Could not connect to backend server. Make sure your server is running.');
-    }
-  };
-
-  const handleSaveProfile = async (updatedProfile) => {
-    if (!currentUser) return;
-    try {
-      setError(null);
-      const res = await fetch(`${API_BASE_URL}/profile`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-User-Id': currentUser._id
-        },
-        body: JSON.stringify(updatedProfile),
-      });
-      if (!res.ok) throw new Error('Failed to update profile');
-      const data = await res.json();
-      setCurrentUser(data);
-      setIsProfileOpen(false);
-    } catch (err) {
-      console.error(err);
-      setError('Could not update profile information.');
     }
   };
 
@@ -152,12 +76,12 @@ export default function App() {
   };
 
   const handleCreateChat = async () => {
-    if (!currentUser) return;
+    if (!clientId) return;
     try {
       setError(null);
       const res = await fetch(API_BASE_URL, {
         method: 'POST',
-        headers: { 'X-User-Id': currentUser._id }
+        headers: { 'X-User-Id': clientId }
       });
       if (!res.ok) throw new Error('Failed to start new chat');
       const newChat = await res.json();
@@ -205,7 +129,7 @@ export default function App() {
   };
 
   const handleSendMessage = async (content, image) => {
-    if (!activeChatId || !currentUser) return;
+    if (!activeChatId || !clientId) return;
     try {
       setError(null);
       setLoading(true);
@@ -224,7 +148,7 @@ export default function App() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-User-Id': currentUser._id
+          'X-User-Id': clientId
         },
         body: JSON.stringify({ content, image }),
       });
@@ -245,15 +169,6 @@ export default function App() {
     }
   };
 
-  const handleAuthSuccess = (user) => {
-    setCurrentUser(user);
-  };
-
-  const handleLogOut = () => {
-    localStorage.removeItem('chat_user_id');
-    setCurrentUser(null);
-  };
-
   const toggleTheme = () => {
     setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'));
   };
@@ -263,8 +178,7 @@ export default function App() {
     setIsSidebarOpen(false);
   };
 
-  // Show loading indicator until auto-guest registration is done
-  if (!currentUser) {
+  if (!clientId) {
     return (
       <div className={`app-container ${theme}`} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh' }}>
         <div className="dots-wrapper">
@@ -293,8 +207,6 @@ export default function App() {
         onCreateChat={handleCreateChat}
         onDeleteChat={handleDeleteChat}
         onUpdateChatTitle={handleUpdateChatTitle}
-        currentUser={currentUser}
-        onLogOut={handleLogOut}
         isOpen={isSidebarOpen}
       />
 
@@ -314,21 +226,11 @@ export default function App() {
           messages={messages}
           loading={loading}
           onSendMessage={handleSendMessage}
-          onOpenProfile={() => setIsProfileOpen(true)}
-          profile={currentUser}
           theme={theme}
           onToggleTheme={toggleTheme}
           onToggleSidebar={() => setIsSidebarOpen(prev => !prev)}
         />
       </div>
-
-      {/* User profile configuration Modal */}
-      <ProfileModal
-        isOpen={isProfileOpen}
-        onClose={() => setIsProfileOpen(false)}
-        onSave={handleSaveProfile}
-        initialProfile={currentUser}
-      />
     </div>
   );
 }

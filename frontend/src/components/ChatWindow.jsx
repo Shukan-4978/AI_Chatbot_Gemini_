@@ -2,7 +2,6 @@ import React, { useRef, useEffect, useState } from 'react';
 import { useAutoAnimate } from '@formkit/auto-animate/react';
 import { Send, Share2, Clipboard, Check, Paperclip, X, Sun, Moon, Menu } from 'lucide-react';
 import TypingIndicator from './TypingIndicator';
-import { MaleAvatarSVG, FemaleAvatarSVG } from './ProfileModal';
 
 // Custom lightweight markdown and code block parser
 function MarkdownContent({ text }) {
@@ -154,7 +153,7 @@ function parseInlineMarkdown(text) {
   });
 }
 
-export default function ChatWindow({ activeChat, messages, loading, onSendMessage, onOpenProfile, profile, theme, onToggleTheme, onToggleSidebar }) {
+export default function ChatWindow({ activeChat, messages, loading, onSendMessage, theme, onToggleTheme, onToggleSidebar }) {
   const [input, setInput] = useState('');
   const [selectedImage, setSelectedImage] = useState(null); // { base64: "...", mimeType: "..." }
   const messagesEndRef = useRef(null);
@@ -250,13 +249,6 @@ export default function ChatWindow({ activeChat, messages, loading, onSendMessag
     }
   };
 
-  // Render correct user profile avatar on bubbles
-  const renderUserAvatar = () => {
-    if (profile && profile.avatar === 'female') {
-      return <FemaleAvatarSVG />;
-    }
-    return <MaleAvatarSVG />;
-  };
   if (!activeChat) {
     return (
       <div className="welcome-container">
@@ -267,13 +259,10 @@ export default function ChatWindow({ activeChat, messages, loading, onSendMessag
           </button>
         </div>
 
-        {/* Header (still needed to switch profile/themes when activeChat is null) */}
+        {/* Header (still needed to switch themes when activeChat is null) */}
         <div style={{ position: 'absolute', top: 0, right: 0, padding: '16px', display: 'flex', gap: '10px', alignItems: 'center' }}>
           <button onClick={onToggleTheme} className="header-icon-btn" title="Toggle Light/Dark Theme">
             {theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}
-          </button>
-          <button onClick={onOpenProfile} className="profile-avatar-btn" title="Open Profile Settings">
-            {renderUserAvatar()}
           </button>
         </div>
 
@@ -314,11 +303,6 @@ export default function ChatWindow({ activeChat, messages, loading, onSendMessag
           <button onClick={onToggleTheme} className="header-icon-btn" title="Toggle Light/Dark Theme">
             {theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}
           </button>
-
-          {/* Profile selector icon */}
-          <button onClick={onOpenProfile} className="profile-avatar-btn" title="Open Profile Settings">
-            {renderUserAvatar()}
-          </button>
         </div>
       </header>
 
@@ -329,7 +313,7 @@ export default function ChatWindow({ activeChat, messages, loading, onSendMessag
           return (
             <div key={msg._id} className={`message-item ${isUser ? 'user' : 'model'}`}>
               <div className={`avatar ${isUser ? 'user' : 'ai'}`}>
-                {isUser ? renderUserAvatar() : 'AI'}
+                {isUser ? 'You' : 'AI'}
               </div>
               <div className="message-bubble">
                 {/* Visual Attachment (Image) in Chat Bubble */}

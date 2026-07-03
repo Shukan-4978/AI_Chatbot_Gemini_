@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MessageSquare, Plus, Trash2, Edit3, Check, X, LogOut } from 'lucide-react';
-import { MaleAvatarSVG, FemaleAvatarSVG } from './ProfileModal';
 
-export default function Sidebar({ chats, activeChatId, onSelectChat, onCreateChat, onDeleteChat, onUpdateChatTitle, currentUser, onLogOut, isOpen }) {
+export default function Sidebar({ chats, activeChatId, onSelectChat, onCreateChat, onDeleteChat, onUpdateChatTitle, isOpen }) {
   const [editingId, setEditingId] = useState(null);
   const [editTitle, setEditTitle] = useState('');
 
@@ -145,30 +144,7 @@ export default function Sidebar({ chats, activeChatId, onSelectChat, onCreateCha
         )}
       </div>
 
-      {/* Sidebar Footer / User Profile section */}
-      {currentUser && (
-        <div style={{
-          padding: '16px',
-          borderTop: '1px solid rgba(255, 255, 255, 0.05)',
-          display: 'flex',
-          alignItems: 'center',
-          background: 'rgba(0, 0, 0, 0.15)'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0, width: '100%' }}>
-            <div style={{ width: '32px', height: '32px', borderRadius: '50%', overflow: 'hidden', border: '1px solid rgba(255, 255, 255, 0.1)', flexShrink: 0 }}>
-              {currentUser.avatar === 'female' ? <FemaleAvatarSVG /> : <MaleAvatarSVG />}
-            </div>
-            <div style={{ minWidth: 0, flex: 1 }}>
-              <div style={{ fontSize: '0.8rem', fontWeight: '600', color: 'white', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                {currentUser.name}
-              </div>
-              <div style={{ fontSize: '0.65rem', color: 'rgba(255, 255, 255, 0.3)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                {currentUser.email}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+
     </aside>
   );
 }

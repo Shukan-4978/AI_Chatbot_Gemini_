@@ -178,12 +178,8 @@ export const sendMessage = async (req, res) => {
       return res.status(400).json({ error: 'Message content is required' });
     }
 
-    // 1. Fetch user to check preferred language
+    // 1. Fetch user to check preferred language (defaulting to English as accounts are removed)
     let preferredLanguage = 'English';
-    if (userId) {
-      const user = await User.findById(userId);
-      if (user) preferredLanguage = user.language;
-    }
 
     // 2. Save user message with optional attachment
     const userMessage = await Message.create({
