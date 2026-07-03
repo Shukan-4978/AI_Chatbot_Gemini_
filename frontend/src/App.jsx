@@ -17,8 +17,10 @@ export default function App() {
   // Load or generate local client ID on mount
   useEffect(() => {
     let savedClientId = localStorage.getItem('chat_client_id');
-    if (!savedClientId) {
-      savedClientId = 'client_' + Date.now() + '_' + Math.random().toString(36).substring(2, 9);
+    // If it's not a valid 24-character hex string, regenerate it to avoid ObjectId CastErrors on backend
+    const hexPattern = /^[0-9a-fA-F]{24}$/;
+    if (!savedClientId || !hexPattern.test(savedClientId)) {
+      savedClientId = Array.from({ length: 24 }, () => Math.floor(Math.random() * 16).toString(16)).join('');
       localStorage.setItem('chat_client_id', savedClientId);
     }
     setClientId(savedClientId);
