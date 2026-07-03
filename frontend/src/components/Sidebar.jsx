@@ -152,14 +152,13 @@ export default function Sidebar({ chats, activeChatId, onSelectChat, onCreateCha
           borderTop: '1px solid rgba(255, 255, 255, 0.05)',
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'space-between',
           background: 'rgba(0, 0, 0, 0.15)'
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0, width: '100%' }}>
             <div style={{ width: '32px', height: '32px', borderRadius: '50%', overflow: 'hidden', border: '1px solid rgba(255, 255, 255, 0.1)', flexShrink: 0 }}>
               {currentUser.avatar === 'female' ? <FemaleAvatarSVG /> : <MaleAvatarSVG />}
             </div>
-            <div style={{ minWidth: 0 }}>
+            <div style={{ minWidth: 0, flex: 1 }}>
               <div style={{ fontSize: '0.8rem', fontWeight: '600', color: 'white', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                 {currentUser.name}
               </div>
@@ -168,14 +167,6 @@ export default function Sidebar({ chats, activeChatId, onSelectChat, onCreateCha
               </div>
             </div>
           </div>
-          <button
-            onClick={onLogOut}
-            className="action-btn delete"
-            title="Log Out"
-            style={{ padding: '6px', borderRadius: '8px', flexShrink: 0 }}
-          >
-            <LogOut size={16} />
-          </button>
         </div>
       )}
     </aside>

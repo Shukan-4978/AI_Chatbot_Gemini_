@@ -88,23 +88,7 @@ export default function ProfileModal({ isOpen, onClose, onSave, initialProfile }
 
         {/* Form Body */}
         <form onSubmit={handleSubmit} className="modal-body" style={{ maxHeight: '460px', overflowY: 'auto', paddingRight: '4px' }}>
-          {/* Display Generated Passcode */}
-          <div className="form-group" style={{ marginBottom: '8px' }}>
-            <label className="form-label" style={{ color: '#c084fc' }}>Your Login Passcode</label>
-            <div style={{
-              background: 'rgba(167, 139, 250, 0.08)',
-              border: '1px solid rgba(167, 139, 250, 0.25)',
-              borderRadius: '10px',
-              padding: '10px 14px',
-              fontSize: '1.2rem',
-              fontWeight: '700',
-              color: 'white',
-              textAlign: 'center',
-              letterSpacing: '3px'
-            }}>
-              {profile.password}
-            </div>
-          </div>
+
 
           {/* Name */}
           <div className="form-group">

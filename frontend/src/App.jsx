@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import Sidebar from './components/Sidebar';
 import ChatWindow from './components/ChatWindow';
 import ProfileModal from './components/ProfileModal';
-import AuthModal from './components/AuthModal';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:1111/api/chats';
 
@@ -19,11 +18,44 @@ export default function App() {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [theme, setTheme] = useState('dark');
 
-  // Verify auth session on mount
+  // Create a guest user profile automatically
+  const createGuestUser = async () => {
+    try {
+      const uniqueSuffix = Date.now() + Math.floor(Math.random() * 1000);
+      const guestData = {
+        name: 'Guest User',
+        gender: 'male',
+        dob: '2000-01-01',
+        avatar: 'male',
+        language: 'English',
+        contactNo: '0000000000',
+        email: `guest_${uniqueSuffix}@example.com`,
+        city: 'Guest City'
+      };
+      const res = await fetch(`${API_BASE_URL}/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(guestData)
+      });
+      if (res.ok) {
+        const data = await res.json();
+        localStorage.setItem('chat_user_id', data._id);
+        setCurrentUser(data);
+      } else {
+        console.error("Failed to auto-register guest user");
+      }
+    } catch (err) {
+      console.error("Error auto-registering guest user:", err);
+    }
+  };
+
+  // Verify auth session on mount or register guest
   useEffect(() => {
     const savedUserId = localStorage.getItem('chat_user_id');
     if (savedUserId) {
       fetchProfile(savedUserId);
+    } else {
+      createGuestUser();
     }
   }, []);
 
@@ -55,6 +87,7 @@ export default function App() {
         // Clear broken session
         localStorage.removeItem('chat_user_id');
         setCurrentUser(null);
+        createGuestUser();
         return;
       }
       const data = await res.json();
@@ -130,6 +163,7 @@ export default function App() {
       const newChat = await res.json();
       setChats((prev) => [newChat, ...prev]);
       setActiveChatId(newChat._id);
+      setIsSidebarOpen(false);
     } catch (err) {
       console.error(err);
       setError('Could not create a new chat.');
@@ -229,9 +263,17 @@ export default function App() {
     setIsSidebarOpen(false);
   };
 
-  // Force register/login modal if not authenticated
+  // Show loading indicator until auto-guest registration is done
   if (!currentUser) {
-    return <AuthModal onAuthSuccess={handleAuthSuccess} />;
+    return (
+      <div className={`app-container ${theme}`} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh' }}>
+        <div className="dots-wrapper">
+          <div className="dot" />
+          <div className="dot" />
+          <div className="dot" />
+        </div>
+      </div>
+    );
   }
 
   const activeChat = chats.find((c) => c._id === activeChatId);
