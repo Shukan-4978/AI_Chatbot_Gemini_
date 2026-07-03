@@ -221,7 +221,7 @@ export const sendMessage = async (req, res) => {
 
     // 4. Setup Gemini with systemInstruction to enforce user's selected language
     const model = genAI.getGenerativeModel({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-1.5-flash',
       systemInstruction: `You are a helpful and intelligent AI assistant. The user's preferred language is ${preferredLanguage}. You MUST formulate all replies in the language: ${preferredLanguage}.`
     });
 
