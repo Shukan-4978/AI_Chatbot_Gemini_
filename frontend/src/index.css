@@ -1203,12 +1203,13 @@ body {
     backdrop-filter: blur(30px) !important;
     -webkit-backdrop-filter: blur(30px) !important;
     border-right: 1px solid rgba(255, 255, 255, 0.05) !important;
-    box-shadow: 25px 0 50px -10px rgba(0, 0, 0, 0.8) !important;
-    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    box-shadow: none !important;
+    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s ease !important;
   }
 
   .sidebar.open {
     transform: translateX(0);
+    box-shadow: 20px 0 40px rgba(0, 0, 0, 0.18) !important;
   }
 
   .sidebar-overlay {
