@@ -1,9 +1,9 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import Groq from 'groq-sdk';
 import Chat from '../models/Chat.js';
 import Message from '../models/Message.js';
 import User from '../models/User.js';
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "AIzaSyAaGE4HNhri5kdZPD0JGs9Xp8a3wtMsY4M");
+const groq = new Groq({ apiKey: process.env.GROQ_API_KEY || "dummy_api_key_for_build" });
 
 // User Registration Flow
 export const registerUser = async (req, res) => {
@@ -167,21 +167,17 @@ export const deleteChat = async (req, res) => {
   }
 };
 
-// Send message & generate AI response with context + language + multimodal file support
+// Send message & generate AI response with context + language + multimodal file support using Groq
 export const sendMessage = async (req, res) => {
   try {
     const { id } = req.params;
     const { content, image } = req.body;
-    const userId = req.headers['x-user-id'];
 
     if (!content) {
       return res.status(400).json({ error: 'Message content is required' });
     }
 
-    // 1. Fetch user to check preferred language (defaulting to English as accounts are removed)
-    let preferredLanguage = 'English';
-
-    // 2. Save user message with optional attachment
+    // 1. Save user message with optional attachment
     const userMessage = await Message.create({
       chatId: id,
       sender: 'user',
@@ -189,63 +185,54 @@ export const sendMessage = async (req, res) => {
       attachment: image && image.base64 ? { base64: image.base64, mimeType: image.mimeType } : null
     });
 
-    // 3. Fetch conversation history for context
+    // 2. Fetch conversation history for context
     const previousMessages = await Message.find({ chatId: id }).sort({ createdAt: 1 });
 
-    // Format history for Gemini API
-    const history = [];
-    for (let i = 0; i < previousMessages.length - 1; i++) {
-      const msg = previousMessages[i];
-      const parts = [];
+    // 3. Format history for Groq API
+    const messages = [
+      {
+        role: 'system',
+        content: 'You are a helpful and intelligent AI assistant. The user\'s preferred language is English. You MUST formulate all replies in the language: English.'
+      }
+    ];
 
+    let hasImage = false;
+    for (let i = 0; i < previousMessages.length; i++) {
+      const msg = previousMessages[i];
+      const isUser = msg.sender === 'user';
+      
       if (msg.attachment && msg.attachment.base64) {
-        const rawData = msg.attachment.base64.split(',')[1] || msg.attachment.base64;
-        parts.push({
-          inlineData: {
-            data: rawData,
-            mimeType: msg.attachment.mimeType
-          }
+        hasImage = true;
+        messages.push({
+          role: 'user',
+          content: [
+            { type: 'text', text: msg.content },
+            {
+              type: 'image_url',
+              image_url: {
+                url: msg.attachment.base64
+              }
+            }
+          ]
+        });
+      } else {
+        messages.push({
+          role: isUser ? 'user' : 'assistant',
+          content: msg.content
         });
       }
-      parts.push({ text: msg.content });
-
-      history.push({
-        role: msg.sender === 'user' ? 'user' : 'model',
-        parts
-      });
     }
 
-    // 4. Setup Gemini with systemInstruction to enforce user's selected language
-    const model = genAI.getGenerativeModel({
-      model: 'gemini-2.0-flash',
-      systemInstruction: `You are a helpful and intelligent AI assistant. The user's preferred language is ${preferredLanguage}. You MUST formulate all replies in the language: ${preferredLanguage}.`
+    // Determine model to use based on media presence
+    const model = hasImage ? 'llama-3.2-11b-vision-preview' : 'llama-3.3-70b-versatile';
+
+    // 4. Send messages to Groq
+    const completion = await groq.chat.completions.create({
+      messages,
+      model,
     });
 
-    // Determine current message parts (include media if present)
-    const currentParts = [];
-    if (image && image.base64) {
-      const currentRawData = image.base64.split(',')[1] || image.base64;
-      currentParts.push({
-        inlineData: {
-          data: currentRawData,
-          mimeType: image.mimeType
-        }
-      });
-    }
-    currentParts.push({ text: content });
-
-    // Send session message
-    const result = await model.generateContent({
-      contents: [
-        ...history,
-        {
-          role: 'user',
-          parts: currentParts
-        }
-      ]
-    });
-
-    const aiText = result.response.text();
+    const aiText = completion.choices[0].message.content;
 
     // 5. Save AI response
     const aiMessage = await Message.create({
@@ -267,7 +254,7 @@ export const sendMessage = async (req, res) => {
 
     res.status(200).json({ userMessage, aiMessage });
   } catch (error) {
-    console.error('Gemini API Error:', error);
+    console.error('Groq API Error:', error);
     res.status(500).json({ error: 'Failed to communicate with AI model' });
   }
 };
